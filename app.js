@@ -649,30 +649,34 @@ function formatPhoneNumber(num) {
 function initRealtimeListeners() {
     if (!isFirebaseEnabled || !state.loggedInUser) return;
     
-    // 1. Listen to User Deals (Rooms where user is either buyer or seller)
-    activeUnsubscribers.rooms = db.collection('rooms')
-        .where('ids', 'array-contains', state.loggedInUser.id)
-        .onSnapshot(snapshot => {
-            let roomsList = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                data.id = doc.id;
-                data.activeRole = (data.buyerId === state.loggedInUser.id) ? 'buyer' : 'seller';
-                roomsList.push(data);
-            });
-            state.rooms = roomsList;
-            
-            // Auto-select room if none is currently selected and rooms exist
-            if (!state.activeRoomId && roomsList.length > 0) {
-                state.activeRoomId = roomsList[0].id;
-            }
-            
-            // Re-render sidebar & active chat details
-            renderDealsSidebar();
-            renderDealChatWindow();
-        }, err => {
-            console.error("Rooms listener error:", err);
+    const isAdmin = state.loggedInUser.phone === '0830158022' || state.loggedInUser.phone === '0831058022' || state.loggedInUser.id === '000-001';
+    
+    // 1. Listen to Deals (All rooms for admin, or user-specific rooms for regular members)
+    let roomsRef = db.collection('rooms');
+    let roomsQuery = isAdmin ? roomsRef : roomsRef.where('ids', 'array-contains', state.loggedInUser.id);
+    
+    activeUnsubscribers.rooms = roomsQuery.onSnapshot(snapshot => {
+        let roomsList = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            data.id = doc.id;
+            data.activeRole = (data.buyerId === state.loggedInUser.id) ? 'buyer' : 'seller';
+            roomsList.push(data);
         });
+        state.rooms = roomsList;
+        
+        // Auto-select room if none is currently selected and rooms exist
+        if (!state.activeRoomId && roomsList.length > 0) {
+            state.activeRoomId = roomsList[0].id;
+        }
+        
+        // Re-render sidebar, active chat details & admin panel
+        renderDealsSidebar();
+        renderDealChatWindow();
+        if (isAdmin) renderAdminPanel();
+    }, err => {
+        console.error("Rooms listener error:", err);
+    });
         
     // 2. Listen to Admin KYC Requests Queue
     activeUnsubscribers.kyc = db.collection('kycQueue')
@@ -2462,9 +2466,18 @@ function renderAdminPanel() {
     let totalEscrow = 0;
     state.rooms.forEach(r => {
         if (r.escrowStatus === 'held' || r.escrowStatus === 'suspended') {
-            totalEscrow += r.escrowAmount;
+            const amt = Number(r.escrowAmount) || Number(r.amount) || 0;
+            totalEscrow += amt;
         }
     });
+    // Fallback if state.rooms hasn't loaded room amount yet, calculate from active dispute tickets
+    if (totalEscrow === 0 && state.disputes && state.disputes.length > 0) {
+        state.disputes.forEach(d => {
+            if (d.status === 'suspended') {
+                totalEscrow += (Number(d.amount) || 0);
+            }
+        });
+    }
     const statEscrow = document.getElementById('admin-stat-escrow');
     if (statEscrow) statEscrow.innerText = `฿${totalEscrow.toLocaleString()}`;
     
