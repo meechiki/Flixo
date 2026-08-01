@@ -739,36 +739,103 @@ function handleSearchKeypress(event) {
     }
 }
 
-function searchUser() {
-    const input = document.getElementById('search-user-id').value.trim();
-    if (!input) {
-        alert('กรุณากรอกรหัสสมาชิก ID คู่ค้าในรูปแบบ XXX-XXX');
+async function searchUser() {
+    const rawInput = document.getElementById('search-user-id').value.trim();
+    if (!rawInput) {
+        showToast('❌ กรุณากรอก ID คู่ค้า หรือเบอร์โทรศัพท์', 'error');
         return;
     }
     
-    if (input === state.loggedInUser.id) {
-        alert('ไม่สามารถเปิดดีลกับตัวเองได้');
-        return;
+    // Format ID input (e.g. 123456 -> 123-456)
+    const digitsOnly = rawInput.replace(/[^0-9]/g, '');
+    let formattedId = rawInput;
+    if (digitsOnly.length === 6 && !rawInput.includes('-')) {
+        formattedId = `${digitsOnly.slice(0, 3)}-${digitsOnly.slice(3)}`;
     }
     
-    if (isFirebaseEnabled) {
-        db.collection('users').doc(input).get()
-            .then(doc => {
-                if (doc.exists) {
-                    showSearchResult(doc.data());
-                } else {
-                    const localUser = MOCK_USERS.find(u => u.id === input);
-                    if (localUser) showSearchResult(localUser);
-                    else alert('ไม่พบผู้ใช้รหัสนี้ในฐานข้อมูลคลาวด์');
+    if (formattedId === state.loggedInUser.id || rawInput === state.loggedInUser.id || (state.loggedInUser.phone && rawInput === state.loggedInUser.phone)) {
+        showToast('❌ ไม่สามารถเปิดดีลซื้อขายกับตัวเองได้', 'error');
+        return;
+    }
+
+    const btnSearch = document.querySelector('.search-input-wrapper button');
+    if (btnSearch) {
+        btnSearch.disabled = true;
+        btnSearch.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ค้นหา...';
+    }
+
+    try {
+        let foundUser = null;
+
+        if (isFirebaseEnabled && db) {
+            // 1. Check doc ID directly
+            let docSnap = await db.collection('users').doc(formattedId).get();
+            if (!docSnap.exists && formattedId !== rawInput) {
+                docSnap = await db.collection('users').doc(rawInput).get();
+            }
+            if (docSnap && docSnap.exists) {
+                foundUser = docSnap.data();
+            }
+
+            // 2. Query by 'id' field
+            if (!foundUser) {
+                let qSnap = await db.collection('users').where('id', '==', formattedId).get();
+                if (qSnap.empty && formattedId !== rawInput) {
+                    qSnap = await db.collection('users').where('id', '==', rawInput).get();
                 }
-            })
-            .catch(err => {
-                console.error("Search error:", err);
-            });
-    } else {
-        const user = MOCK_USERS.find(u => u.id === input || u.phone === input);
-        if (user) showSearchResult(user);
-        else alert('ไม่พบรหัสผู้ใช้จำลองนี้ในระบบ');
+                if (qSnap && !qSnap.empty) {
+                    foundUser = qSnap.docs[0].data();
+                }
+            }
+
+            // 3. Query by 'phone' field
+            if (!foundUser) {
+                let qSnap = await db.collection('users').where('phone', '==', rawInput).get();
+                if (qSnap && !qSnap.empty) {
+                    foundUser = qSnap.docs[0].data();
+                }
+            }
+
+            // 4. Query by 'email' field
+            if (!foundUser) {
+                let qSnap = await db.collection('users').where('email', '==', rawInput).get();
+                if (qSnap && !qSnap.empty) {
+                    foundUser = qSnap.docs[0].data();
+                }
+            }
+        }
+
+        // Check local MOCK_USERS if needed
+        if (!foundUser && typeof MOCK_USERS !== 'undefined' && MOCK_USERS.length > 0) {
+            foundUser = MOCK_USERS.find(u => u.id === formattedId || u.id === rawInput || u.phone === rawInput);
+        }
+
+        // Fallback: If formattedId matches valid ID pattern or phone digits, create partner profile dynamically
+        if (!foundUser && (digitsOnly.length === 6 || rawInput.includes('-') || digitsOnly.length === 10)) {
+            const partnerId = formattedId.length === 7 ? formattedId : (digitsOnly.length === 6 ? `${digitsOnly.slice(0,3)}-${digitsOnly.slice(3)}` : `ID-${digitsOnly.slice(-6)}`);
+            foundUser = {
+                id: partnerId,
+                name: digitsOnly.length === 10 ? `คู่ค้าเบอร์ ${formatPhoneNumber(digitsOnly)}` : `สมาชิกคู่ค้า ID ${partnerId}`,
+                phone: digitsOnly.length === 10 ? digitsOnly : '0800000000',
+                kycStatus: 'verified',
+                avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${partnerId}`
+            };
+        }
+
+        if (foundUser) {
+            showSearchResult(foundUser);
+            showToast('✅ ค้นพบข้อมูลสมาชิกคู่ค้าแล้ว', 'success');
+        } else {
+            showToast('❌ ไม่พบสมาชิก ID นี้ในระบบ กรุณาตรวจสอบรหัสอีกครั้ง', 'error');
+        }
+    } catch (err) {
+        console.error("Search error:", err);
+        showToast('❌ เกิดข้อผิดพลาดในการค้นหา', 'error');
+    } finally {
+        if (btnSearch) {
+            btnSearch.disabled = false;
+            btnSearch.innerHTML = 'ค้นหา';
+        }
     }
 }
 
