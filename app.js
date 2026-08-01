@@ -101,29 +101,8 @@ let state = {
 // Base64 upload cache for dispute
 let disputeEvidenceBase64 = null;
 
-// Database of Mock Users in System (Formatted as XXX-XXX ID)
+// Database of Master Users in System (Formatted as XXX-XXX ID)
 const MOCK_USERS = [
-    {
-        id: '109-281',
-        name: 'คุณมานี มีขาย',
-        phone: '0819981092',
-        kycStatus: 'verified',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=manee'
-    },
-    {
-        id: '884-902',
-        name: 'คุณสมศักดิ์ รักดี',
-        phone: '0892238849',
-        kycStatus: 'unverified',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=somsak'
-    },
-    {
-        id: '204-188',
-        name: 'คุณวิชัย ใจกล้า',
-        phone: '0851212041',
-        kycStatus: 'verified',
-        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=wichai'
-    },
     // Admin Master Account
     {
         id: '000-001',
