@@ -1471,18 +1471,28 @@ function renderDealChatWindow() {
         if (sendBtn) sendBtn.disabled = false;
     }
     
-    const isClosed = state.closedRooms.includes(activeRoom.id) || activeRoom.status === 'closed';
+    const isCompleted = activeRoom.escrowStatus === 'released' || activeRoom.status === 'closed' || state.closedRooms.includes(activeRoom.id);
     const bellBtn = document.getElementById('btn-bell-notify');
     const chatInput = document.getElementById('active-chat-input');
+    const chatImgInput = document.getElementById('chat-img-file');
     
-    if (isClosed) {
-        if (chatInput) { chatInput.disabled = true; chatInput.placeholder = 'ดีลนี้ปิดแล้ว ไม่สามารถส่งข้อความได้'; }
+    if (isCompleted) {
+        if (chatInput) { 
+            chatInput.disabled = true; 
+            chatInput.placeholder = '🔒 ดีลนี้เสร็จสมบูรณ์เรียบร้อยแล้ว (ปิดการส่งข้อความ)'; 
+            chatInput.value = '';
+        }
         if (sendBtn) sendBtn.disabled = true;
         if (bellBtn) bellBtn.disabled = true;
+        if (chatImgInput) chatImgInput.disabled = true;
     } else {
-        if (chatInput) { chatInput.disabled = false; chatInput.placeholder = 'พิมพ์ข้อความเจรจา...'; }
+        if (chatInput) { 
+            chatInput.disabled = false; 
+            chatInput.placeholder = 'พิมพ์ข้อความเจรจา...'; 
+        }
         if (sendBtn) sendBtn.disabled = false;
         if (bellBtn) bellBtn.disabled = false;
+        if (chatImgInput) chatImgInput.disabled = false;
     }
     
     const isBuyer = activeRoom.buyerId === state.loggedInUser.id;
@@ -1779,6 +1789,11 @@ async function sendDealMessage() {
     const pendingImage = window.pendingChatImageBase64 || null;
     
     if (!activeRoom || (!text && !pendingImage)) return;
+    
+    if (activeRoom.escrowStatus === 'released' || activeRoom.status === 'closed' || state.closedRooms.includes(activeRoom.id)) {
+        showToast('🔒 ดีลนี้เสร็จสมบูรณ์เรียบร้อยแล้ว ไม่สามารถส่งข้อความได้อีก', 'warning');
+        return;
+    }
     
     const userId = state.loggedInUser.id;
     const banKey = `flixo_chat_banned_until_${userId}`;
@@ -2085,15 +2100,16 @@ function confirmEscrowReceipt(roomId) {
     const activeRoom = state.rooms.find(r => r.id === roomId);
     if (!activeRoom) return;
     
-    if (confirm('คุณแน่ใจว่าได้รับของครบถ้วนแล้ว? หลังจากกดยอมรับ ระบบจะปล่อยโอนเงินให้ฝั่งผู้ขายทันทีและไม่สามารถดึงคืนได้')) {
-        if (isFirebaseEnabled) {
+    if (confirm('คุณแน่ใจว่าได้รับของครบถ้วนแล้ว? หลังจากกดยอมรับ ระบบจะปล่อยโอนเงินให้ฝั่งผู้ขายทันที ดีลนี้จะถือว่าเสร็จสมบูรณ์และปิดแชท')) {
+        if (isFirebaseEnabled && db) {
             db.collection('rooms').doc(activeRoom.id).update({
                 escrowStatus: 'released',
-                escrowMoneyState: 'ปล่อยยอดชำระสำเร็จ'
+                status: 'closed',
+                escrowMoneyState: 'โอนเงินเข้าบัญชีเรียบร้อย'
             });
             db.collection('rooms').doc(activeRoom.id).collection('messages').add({
                 sender: 'system',
-                text: `ผู้ซื้อกดยอมรับสัญญา ย้ายยอด ฿${activeRoom.escrowAmount.toLocaleString()} เข้ากระเป๋าผู้ขายเรียบร้อย`,
+                text: `🔒 [ระบบตัวกลาง]: ผู้ซื้อกดยืนยันรับของสำเร็จ โอนเงิน ฿${activeRoom.escrowAmount.toLocaleString()} เข้าบัญชีเรียบร้อย จบดีลสมบูรณ์และปิดห้องแชทถาวร`,
                 timestamp: getFormattedTime(),
                 clientTimestamp: Date.now(),
                 serverTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -2102,10 +2118,11 @@ function confirmEscrowReceipt(roomId) {
             });
         } else {
             activeRoom.escrowStatus = 'released';
-            activeRoom.escrowMoneyState = 'ปล่อยโอนสิทธิ์ยอดเงินสำเร็จ';
+            activeRoom.status = 'closed';
+            activeRoom.escrowMoneyState = 'โอนเงินเข้าบัญชีเรียบร้อย';
             activeRoom.messages.push({
                 sender: 'system',
-                text: `ผู้ซื้อกดยืนยันจัดส่งครบถ้วน โอนเงินค่าดีล ฿${activeRoom.escrowAmount.toLocaleString()} เข้าบัญชีผู้ขายสำเร็จ`,
+                text: `🔒 [ระบบตัวกลาง]: ผู้ซื้อกดยืนยันรับของสำเร็จ โอนเงิน ฿${activeRoom.escrowAmount.toLocaleString()} เข้าบัญชีเรียบร้อย จบดีลสมบูรณ์และปิดห้องแชทถาวร`,
                 timestamp: getFormattedTime(),
                 clientTimestamp: Date.now(),
                 isSystem: true,
@@ -2113,6 +2130,7 @@ function confirmEscrowReceipt(roomId) {
             });
             updateViews();
         }
+        showToast('🔒 ดีลเสร็จสมบูรณ์เรียบร้อยแล้ว', 'success');
     }
 }
 
@@ -2957,11 +2975,12 @@ function adminResolveDispute(disputeId, verdict) {
             });
             db.collection('rooms').doc(ticket.roomId).update({
                 escrowStatus: 'released',
+                status: 'closed',
                 escrowMoneyState: verdict === 'refund' ? 'แอดมินยกเลิกดีลและคืนเงินผู้ซื้อ' : 'แอดมินปิดการระงับและปล่อยเงินโอนผู้ขาย'
             });
             db.collection('rooms').doc(ticket.roomId).collection('messages').add({
                 sender: 'system',
-                text: `⚖️ [คำตัดสินแอดมิน]: สิ้นสุดข้อพิพาท ทำการโอนย้ายยอดเงินจำนวน ฿${ticket.amount.toLocaleString()} ${verdict === 'refund' ? 'คืนผู้ซื้อ' : 'เข้าผู้ขาย'} เรียบร้อยแล้ว`,
+                text: `⚖️ [คำตัดสินแอดมิน]: สิ้นสุดข้อพิพาท ทำการโอนย้ายยอดเงินจำนวน ฿${ticket.amount.toLocaleString()} ${verdict === 'refund' ? 'คืนผู้ซื้อ' : 'เข้าผู้ขาย'} เรียบร้อยแล้ว (ปิดดีลและห้องแชทถาวร)`,
                 timestamp: getFormattedTime(),
                 clientTimestamp: Date.now(),
                 serverTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -2972,13 +2991,14 @@ function adminResolveDispute(disputeId, verdict) {
             const activeRoom = state.rooms.find(r => r.id === ticket.roomId);
             if (!activeRoom) return;
             
+            activeRoom.status = 'closed';
             if (verdict === 'refund') {
                 ticket.status = 'resolved_refunded';
                 activeRoom.escrowStatus = 'released';
                 activeRoom.escrowMoneyState = 'แอดมินสั่งยกเลิกดีลและคืนเงินผู้ซื้อสำเร็จ';
                 activeRoom.messages.push({
                     sender: 'system',
-                    text: `⚖️ [คำตัดสินแอดมิน]: ข้อพิพาทได้รับอนุมัติ คืนเงิน ฿${activeRoom.escrowAmount.toLocaleString()} แก่ผู้ซื้อเรียบร้อย`,
+                    text: `⚖️ [คำตัดสินแอดมิน]: ข้อพิพาทได้รับอนุมัติ คืนเงิน ฿${activeRoom.escrowAmount.toLocaleString()} แก่ผู้ซื้อเรียบร้อย (ปิดดีลและห้องแชทถาวร)`,
                     timestamp: getFormattedTime(),
                     clientTimestamp: Date.now(),
                     isSystem: true,
@@ -2990,7 +3010,7 @@ function adminResolveDispute(disputeId, verdict) {
                 activeRoom.escrowMoneyState = 'แอดมินสั่งปล่อยเงินดีลให้ผู้ขายสำเร็จ';
                 activeRoom.messages.push({
                     sender: 'system',
-                    text: `⚖️ [คำตัดสินแอดมิน]: ข้อพิพาทถูกปฏิเสธ ปล่อยเงิน ฿${activeRoom.escrowAmount.toLocaleString()} แก่ผู้ขายเรียบร้อย`,
+                    text: `⚖️ [คำตัดสินแอดมิน]: ข้อพิพาทถูกปฏิเสธ ปล่อยเงิน ฿${activeRoom.escrowAmount.toLocaleString()} แก่ผู้ขายเรียบร้อย (ปิดดีลและห้องแชทถาวร)`,
                     timestamp: getFormattedTime(),
                     clientTimestamp: Date.now(),
                     isSystem: true,
