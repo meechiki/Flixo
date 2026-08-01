@@ -1971,25 +1971,42 @@ function openPaymentQR(roomId, amount) {
         return;
     }
     
+    window.pendingPaymentAmount = amount;
+    window.pendingPaymentRoomId = roomId;
+
+    const targetRoom = state.rooms.find(r => r.id === roomId);
+    if (targetRoom) {
+        targetRoom.escrowAmount = amount;
+        if (isFirebaseEnabled && db) {
+            db.collection('rooms').doc(roomId).update({ escrowAmount: amount });
+        }
+    }
+    
     document.getElementById('qr-pay-amount').innerText = `฿${amount.toLocaleString()}`;
     document.getElementById('qr-ref1').innerText = 'SE-' + Math.floor(100000 + Math.random() * 900000);
     document.getElementById('modal-qr-pay').style.display = 'flex';
 }
 
 function simulateKycPaymentSuccess() {
-    const activeRoom = state.rooms.find(r => r.id === state.activeRoomId);
+    const roomId = window.pendingPaymentRoomId || state.activeRoomId;
+    const activeRoom = state.rooms.find(r => r.id === roomId);
     if (!activeRoom) return;
+    
+    const amount = window.pendingPaymentAmount || activeRoom.escrowAmount || 0;
+    activeRoom.escrowAmount = amount;
+    activeRoom.escrowStatus = 'held';
     
     closeModal('modal-qr-pay');
     
-    if (isFirebaseEnabled) {
+    if (isFirebaseEnabled && db) {
         db.collection('rooms').doc(activeRoom.id).update({
             escrowStatus: 'held',
+            escrowAmount: amount,
             escrowMoneyState: 'กักเงินเข้ากระเป๋าบัญชีตัวกลางสำเร็จ'
         });
         db.collection('rooms').doc(activeRoom.id).collection('messages').add({
             sender: 'system',
-            text: `ยอดเงินจำนวน ฿${activeRoom.escrowAmount.toLocaleString()} ถูกแสกนชำระและตรวจผ่าน API เข้ากักเก็บใน vault เรียบร้อยแล้ว ( Hold )`,
+            text: `ยอดเงินจำนวน ฿${amount.toLocaleString()} ถูกแสกนชำระและตรวจผ่าน API เข้ากักเก็บใน vault เรียบร้อยแล้ว ( Hold )`,
             timestamp: getFormattedTime(),
             clientTimestamp: Date.now(),
             serverTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1999,10 +2016,11 @@ function simulateKycPaymentSuccess() {
     } else {
         // Local Fallback
         activeRoom.escrowStatus = 'held';
+        activeRoom.escrowAmount = amount;
         activeRoom.escrowMoneyState = 'กักยอดเงินกลางระบบสำเร็จ';
         activeRoom.messages.push({
             sender: 'system',
-            text: `ยอดเงินจำนวน ฿${activeRoom.escrowAmount.toLocaleString()} ถูกแสกนชำระและตรวจผ่าน API เข้ากักเก็บใน vault เรียบร้อยแล้ว ( Hold )`,
+            text: `ยอดเงินจำนวน ฿${amount.toLocaleString()} ถูกแสกนชำระและตรวจผ่าน API เข้ากักเก็บใน vault เรียบร้อยแล้ว ( Hold )`,
             timestamp: getFormattedTime(),
             clientTimestamp: Date.now(),
             isSystem: true,
@@ -2010,7 +2028,7 @@ function simulateKycPaymentSuccess() {
         });
         updateViews();
     }
-    alert('โอนจำลองผ่านระบบสำเร็จ! ปรับกระแสเงินกักเก็บเป็น Hold แล้ว');
+    showToast(`✅ ชำระเงินกักเก็บ ฿${amount.toLocaleString()} เข้าบัญชีกลางสำเร็จ!`, 'success');
 }
 
 function confirmEscrowReceipt(roomId) {
