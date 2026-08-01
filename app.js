@@ -2155,9 +2155,129 @@ function triggerOpenDisputeModal(roomId) {
     document.getElementById('modal-dispute').style.display = 'flex';
 }
 
-function startAdminSupportChat() {
-    initiateDeal('000-001', 'buyer');
-    showToast('💬 เปิดแชทติดต่อแอดมินศูนย์ช่วยเหลือ FLIXO เรียบร้อยแล้ว', 'info');
+async function startAdminSupportChat() {
+    if (!state.loggedInUser) {
+        showToast('❌ กรุณาเข้าสู่ระบบก่อนใช้งานแชทแอดมิน', 'error');
+        return;
+    }
+
+    const adminPartner = {
+        id: '000-001',
+        name: 'FLIXO Support Admin',
+        phone: '0830158022',
+        kycStatus: 'verified',
+        avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=admin'
+    };
+
+    const topic = `แชทช่วยเหลือตรงกับ Admin FLIXO (สมาชิก: ${state.loggedInUser.name})`;
+    const buyerId = state.loggedInUser.id;
+    const buyerName = state.loggedInUser.name;
+    const sellerId = adminPartner.id;
+    const sellerName = adminPartner.name;
+
+    showToast('💬 กำลังเชื่อมต่อแชทตรงกับ Admin...', 'info');
+
+    if (isFirebaseEnabled && db) {
+        try {
+            const querySnapshot = await db.collection('rooms')
+                .where('ids', 'array-contains', state.loggedInUser.id)
+                .get();
+
+            let adminRoomDoc = null;
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                if ((data.buyerId === adminPartner.id || data.sellerId === adminPartner.id) && data.status !== 'closed') {
+                    adminRoomDoc = doc;
+                }
+            });
+
+            if (adminRoomDoc) {
+                state.activeRoomId = adminRoomDoc.id;
+                closeModal('modal-dispute');
+                changeAppTab('deals');
+                showToast('💬 เข้าสู่ห้องแชท Admin FLIXO เรียบร้อย', 'success');
+                return;
+            }
+
+            // Create new Admin Support Room in Firestore
+            const newDoc = {
+                ids: [buyerId, sellerId],
+                buyerName, buyerId,
+                sellerName, sellerId,
+                topic,
+                escrowStatus: 'none',
+                escrowAmount: 0,
+                escrowMoneyState: 'ช่องทางติดต่อแอดมินโดยตรง',
+                hasDispute: false,
+                dispute: null,
+                isAdminSupport: true
+            };
+
+            const docRef = await db.collection('rooms').add(newDoc);
+            state.activeRoomId = docRef.id;
+
+            await docRef.collection('messages').add({
+                sender: 'system',
+                text: `💬 ห้องแชทช่วยเหลือตรงกับ Admin FLIXO ผู้ใช้งานสามารถพิมพ์ข้อความเจรจาหรือสอบถามปัญหาได้ที่นี่`,
+                timestamp: getFormattedTime(),
+                clientTimestamp: Date.now(),
+                serverTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                isSystem: true
+            });
+
+            closeModal('modal-dispute');
+            changeAppTab('deals');
+            showToast('💬 เปิดแชทตรงกับ Admin FLIXO สำเร็จ', 'success');
+        } catch (err) {
+            console.error("Admin chat error:", err);
+            showToast('❌ ไม่สามารถสร้างห้องแชทแอดมินได้', 'error');
+        }
+    } else {
+        // Local Fallback
+        let activeAdminRoom = state.rooms.find(r => 
+            (r.buyerId === adminPartner.id || r.sellerId === adminPartner.id) &&
+            !state.closedRooms.includes(r.id) && r.status !== 'closed'
+        );
+
+        if (activeAdminRoom) {
+            state.activeRoomId = activeAdminRoom.id;
+            closeModal('modal-dispute');
+            changeAppTab('deals');
+            updateViews();
+            return;
+        }
+
+        const dealId = `admin-room-${Date.now()}`;
+        const newRoom = {
+            id: dealId,
+            buyerName, buyerId,
+            sellerName, sellerId,
+            topic,
+            escrowStatus: 'none',
+            escrowAmount: 0,
+            escrowMoneyState: 'ช่องทางติดต่อแอดมินโดยตรง',
+            hasDispute: false,
+            dispute: null,
+            activeRole: 'buyer',
+            isAdminSupport: true,
+            messages: [
+                {
+                    sender: 'system',
+                    text: `💬 ห้องแชทช่วยเหลือตรงกับ Admin FLIXO ผู้ใช้งานสามารถพิมพ์ข้อความเจรจาหรือสอบถามปัญหาได้ที่นี่`,
+                    timestamp: getFormattedTime(),
+                    clientTimestamp: Date.now(),
+                    isSystem: true
+                }
+            ]
+        };
+
+        state.rooms.unshift(newRoom);
+        state.activeRoomId = dealId;
+        closeModal('modal-dispute');
+        changeAppTab('deals');
+        updateViews();
+        showToast('💬 เปิดแชทตรงกับ Admin FLIXO สำเร็จ', 'success');
+    }
 }
 
 async function submitDispute() {
