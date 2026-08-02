@@ -59,9 +59,13 @@
                 <!-- STEP 1: CHOOSE LOGIN METHOD -->
                 <div id="login-step-phone" class="login-step-panel active">
                     <div class="form-group text-center">
-                        <button class="btn-primary btn-block btn-large mt-10 mb-20" id="btn-login-google" onclick="loginWithGoogle()" style="background: white; color: #333; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <button class="btn-primary btn-block btn-large mt-10 mb-10" id="btn-login-google" onclick="loginWithGoogle()" style="background: white; color: #333; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; gap: 10px;">
                             <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 24px; height: 24px;">
                             <span style="font-weight: 500;">ดำเนินการต่อด้วย Google</span>
+                        </button>
+                        <button class="btn-primary btn-block btn-large mb-20" id="btn-login-facebook" onclick="loginWithFacebook()" style="background: #1877F2; color: white; border: none; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                            <i class="fa-brands fa-facebook" style="font-size: 22px;"></i>
+                            <span style="font-weight: 500;">ดำเนินการต่อด้วย Facebook</span>
                         </button>
                     </div>
 
@@ -965,6 +969,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="app.js?v=37"></script>
+    <script src="app.js?v=38"></script>
 </body>
 </html>
