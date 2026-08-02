@@ -317,12 +317,16 @@ function loginWithGoogle() {
     }
 }
 
-function checkFacebookLoginState() {
+function checkLoginState() {
     if (typeof window.FB !== 'undefined' && window.FB) {
         window.FB.getLoginStatus(function(response) {
             statusChangeCallback(response);
         });
     }
+}
+
+function checkFacebookLoginState() {
+    checkLoginState();
 }
 
 function statusChangeCallback(response) {
