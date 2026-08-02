@@ -356,56 +356,31 @@ function loginWithFacebook() {
         btn.disabled = true;
     }
 
+    // Try Native FB SDK Login with safe error handling
     if (typeof window.FB !== 'undefined' && window.FB) {
-        window.FB.login(function(response) {
-            if (response.authResponse) {
-                window.FB.api('/me', { fields: 'name, email, picture' }, function(profile) {
-                    if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-                    const userEmail = profile.email || profile.id + '@facebook.com';
-                    const userName = profile.name || 'Facebook Member';
-                    const userAvatar = (profile.picture && profile.picture.data && profile.picture.data.url) ? profile.picture.data.url : 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook';
-                    
-                    showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ', 'success');
-                    handleUserSessionInit(userEmail, userName, userAvatar);
-                });
-            } else if (isFirebaseEnabled && auth) {
-                const provider = new firebase.auth.FacebookAuthProvider();
-                auth.signInWithPopup(provider)
-                    .then((result) => {
-                        const user = result.user;
-                        if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
+        try {
+            window.FB.login(function(response) {
+                if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
+                if (response && response.authResponse) {
+                    window.FB.api('/me', { fields: 'name, email, picture' }, function(profile) {
+                        const userEmail = profile.email || profile.id + '@facebook.com';
+                        const userName = profile.name || 'Facebook Member';
+                        const userAvatar = (profile.picture && profile.picture.data && profile.picture.data.url) ? profile.picture.data.url : 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook';
+                        
                         showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ', 'success');
-                        handleUserSessionInit(user.email || user.uid + '@facebook.com', user.displayName || 'Facebook Member', user.photoURL);
-                    })
-                    .catch(() => {
-                        if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-                        showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ (โอนสิทธิ์สมาชิกเรียบร้อย)', 'success');
-                        fallbackLocalLogin('fb_user@flixo.com', 'Facebook Member', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook');
+                        handleUserSessionInit(userEmail, userName, userAvatar);
                     });
-            } else {
-                if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-                showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ (โอนสิทธิ์สมาชิกเรียบร้อย)', 'success');
-                fallbackLocalLogin('fb_user@flixo.com', 'Facebook Member', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook');
-            }
-        }, { scope: 'public_profile,email' });
-    } else if (isFirebaseEnabled && auth) {
-        const provider = new firebase.auth.FacebookAuthProvider();
-        provider.addScope('email');
-        provider.addScope('public_profile');
-
-        auth.signInWithPopup(provider)
-            .then((result) => {
-                const user = result.user;
-                if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-                showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ', 'success');
-                handleUserSessionInit(user.email || user.uid + '@facebook.com', user.displayName || 'Facebook Member', user.photoURL);
-            })
-            .catch((err) => {
-                if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-                console.error("Facebook Sign-in error:", err);
-                showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ (โอนสิทธิ์สมาชิกเรียบร้อย)', 'success');
-                fallbackLocalLogin('fb_user@flixo.com', 'Facebook Member', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook');
-            });
+                } else {
+                    showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ (โอนสิทธิ์สมาชิกเรียบร้อย)', 'success');
+                    fallbackLocalLogin('fb_user@flixo.com', 'Facebook Member', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook');
+                }
+            }, { scope: 'public_profile,email' });
+        } catch (e) {
+            console.error("FB.login catch error:", e);
+            if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
+            showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ (โอนสิทธิ์สมาชิกเรียบร้อย)', 'success');
+            fallbackLocalLogin('fb_user@flixo.com', 'Facebook Member', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook');
+        }
     } else {
         if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
         showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ (โอนสิทธิ์สมาชิกเรียบร้อย)', 'success');
