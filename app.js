@@ -317,6 +317,32 @@ function loginWithGoogle() {
     }
 }
 
+function checkFacebookLoginState() {
+    if (typeof window.FB !== 'undefined' && window.FB) {
+        window.FB.getLoginStatus(function(response) {
+            statusChangeCallback(response);
+        });
+    }
+}
+
+function statusChangeCallback(response) {
+    if (response.status === 'connected') {
+        console.log('✓ ผู้ใช้เข้าสู่ระบบ Facebook และอนุมัติแอปแล้ว');
+        window.FB.api('/me', { fields: 'name, email, picture' }, function(profile) {
+            if (profile && !state.loggedInUser) {
+                const userEmail = profile.email || profile.id + '@facebook.com';
+                const userName = profile.name || 'Facebook User';
+                const userAvatar = (profile.picture && profile.picture.data && profile.picture.data.url) ? profile.picture.data.url : 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook';
+                handleUserSessionInit(userEmail, userName, userAvatar);
+            }
+        });
+    } else if (response.status === 'not_authorized') {
+        console.log('ผู้ใช้เข้าสู่ระบบ Facebook แล้ว แต่ยังไม่ได้อนุมัติแอป');
+    } else {
+        console.log('ผู้ใช้ยังไม่ได้เข้าสู่ระบบ Facebook');
+    }
+}
+
 function loginWithFacebook() {
     console.log("Facebook Login clicked, isFirebaseEnabled:", isFirebaseEnabled, "auth:", !!auth);
     const btn = document.getElementById('btn-login-facebook');
