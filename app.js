@@ -312,6 +312,11 @@ function loginWithGoogle() {
                     alert('⚠️ เกิดข้อผิดพลาดจาก Firebase Auth: ' + err.message);
                 }
             });
+    } else {
+        console.warn("Firebase not configured, falling back to simulation");
+    }
+}
+
 function loginWithFacebook() {
     console.log("Facebook Login clicked, isFirebaseEnabled:", isFirebaseEnabled, "auth:", !!auth);
     if (isFirebaseEnabled && auth) {
