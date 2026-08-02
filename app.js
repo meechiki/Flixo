@@ -348,43 +348,44 @@ function statusChangeCallback(response) {
 }
 
 function loginWithFacebook() {
-    console.log("Facebook Login clicked, isFirebaseEnabled:", isFirebaseEnabled, "auth:", !!auth);
+    console.log("Real Facebook Login triggered via Firebase OAuth Provider...");
     const btn = document.getElementById('btn-login-facebook');
     const originalHtml = btn ? btn.innerHTML : '';
     if (btn) {
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span style="font-weight: 500;">กำลังเชื่อมต่อ Facebook...</span>';
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span style="font-weight: 500;">กำลังเปิดหน้าต่าง Facebook...</span>';
         btn.disabled = true;
     }
 
-    // Try Native FB SDK Login with safe error handling
-    if (typeof window.FB !== 'undefined' && window.FB) {
-        try {
-            window.FB.login(function(response) {
+    if (typeof auth !== 'undefined' && auth) {
+        const provider = new firebase.auth.FacebookAuthProvider();
+        provider.addScope('email');
+        provider.addScope('public_profile');
+
+        auth.signInWithPopup(provider)
+            .then((result) => {
                 if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-                if (response && response.authResponse) {
-                    window.FB.api('/me', { fields: 'name, email, picture' }, function(profile) {
-                        const userEmail = profile.email || profile.id + '@facebook.com';
-                        const userName = profile.name || 'Facebook Member';
-                        const userAvatar = (profile.picture && profile.picture.data && profile.picture.data.url) ? profile.picture.data.url : 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook';
-                        
-                        showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ', 'success');
-                        handleUserSessionInit(userEmail, userName, userAvatar);
-                    });
-                } else {
-                    showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ (โอนสิทธิ์สมาชิกเรียบร้อย)', 'success');
-                    fallbackLocalLogin('fb_user@flixo.com', 'Facebook Member', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook');
-                }
-            }, { scope: 'public_profile,email' });
-        } catch (e) {
-            console.error("FB.login catch error:", e);
-            if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-            showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ (โอนสิทธิ์สมาชิกเรียบร้อย)', 'success');
-            fallbackLocalLogin('fb_user@flixo.com', 'Facebook Member', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook');
-        }
+                const user = result.user;
+                const userEmail = user.email || (user.providerData && user.providerData[0] && user.providerData[0].email) || user.uid + '@facebook.com';
+                const userName = user.displayName || 'Facebook Member';
+                const userAvatar = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
+                
+                showToast(`🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ! ยินดีต้อนรับคุณ ${userName}`, 'success');
+                handleUserSessionInit(userEmail, userName, userAvatar);
+            })
+            .catch((err) => {
+                if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
+                console.error("Facebook Real Login error:", err);
+                
+                let errorMsg = 'ไม่สามารถเชื่อมต่อ Facebook ได้';
+                if (err.code === 'auth/popup-blocked') errorMsg = 'เบราว์เซอร์บล็อก Pop-up กรุณาอนุญาตหน้าต่าง Pop-up';
+                if (err.code === 'auth/account-exists-with-different-credential') errorMsg = 'อีเมลนี้เปิดใช้งานด้วยวิธียืนยันตัวตนอื่นแล้ว';
+                if (err.code === 'auth/auth-domain-config-required') errorMsg = 'โดเมนยังไม่ได้ลงทะเบียนใน Firebase Auth';
+                
+                showToast(`❌ ${errorMsg}`, 'error');
+            });
     } else {
         if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-        showToast('🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ (โอนสิทธิ์สมาชิกเรียบร้อย)', 'success');
-        fallbackLocalLogin('fb_user@flixo.com', 'Facebook Member', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook');
+        showToast('❌ ระบบยืนยันตัวตน Firebase ไม่พร้อมใช้งาน', 'error');
     }
 }
 
