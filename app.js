@@ -3642,12 +3642,25 @@ function closeModal(modalId) {
 /* ================= PDPA & TERMS WIZARD LOGIC ================= */
 let currentConsentStep = 1;
 
-function handlePdpaCheckboxClick(el) {
+function handlePdpaCheckboxClick(el, evt) {
+    if (evt) evt.stopPropagation();
     if (el.checked) {
         // Temporarily uncheck until wizard is finished
         el.checked = false;
         openConsentWizard(1);
     } else {
+        toggleLoginButtonsState();
+    }
+}
+
+function triggerPdpaCheckboxFromText(evt) {
+    if (evt) evt.stopPropagation();
+    const chk = document.getElementById('chk-pdpa-consent');
+    if (!chk) return;
+    if (!chk.checked) {
+        openConsentWizard(1);
+    } else {
+        chk.checked = false;
         toggleLoginButtonsState();
     }
 }
