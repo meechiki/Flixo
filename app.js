@@ -279,10 +279,39 @@ function showToast(message, type = 'success') {
 
 
 // ==========================================================================
-// User Authentication (Google Sign-In)
+// User Authentication (Google Sign-In, Facebook, OTP)
 // ==========================================================================
 
+function checkPdpaConsentState() {
+    const chk = document.getElementById('chk-pdpa-consent');
+    if (chk && !chk.checked) {
+        showToast('⚠️ กรุณากดติ๊กยอมรับข้อตกลงและนโยบาย PDPA ก่อนเข้าสู่ระบบ', 'error');
+        const box = document.getElementById('pdpa-consent-box');
+        if (box) {
+            box.style.borderColor = '#ef4444';
+            box.style.background = 'rgba(239, 68, 68, 0.08)';
+            setTimeout(() => {
+                box.style.borderColor = 'var(--border)';
+                box.style.background = 'rgba(56, 189, 248, 0.04)';
+            }, 2500);
+        }
+        return false;
+    }
+    return true;
+}
+
+function toggleLoginButtonsState() {
+    const chk = document.getElementById('chk-pdpa-consent');
+    const isChecked = chk && chk.checked;
+    const box = document.getElementById('pdpa-consent-box');
+    if (box) {
+        box.style.borderColor = isChecked ? '#22c55e' : 'var(--border)';
+        box.style.background = isChecked ? 'rgba(34, 197, 94, 0.06)' : 'rgba(56, 189, 248, 0.04)';
+    }
+}
+
 function loginWithGoogle() {
+    if (!checkPdpaConsentState()) return;
     console.log("Button clicked, isFirebaseEnabled:", isFirebaseEnabled, "auth:", !!auth);
     if (isFirebaseEnabled && auth) {
         const btn = document.getElementById('btn-login-google');
@@ -348,6 +377,7 @@ function statusChangeCallback(response) {
 }
 
 function loginWithFacebook() {
+    if (!checkPdpaConsentState()) return;
     console.log("Real Facebook Login triggered via Firebase OAuth Provider...");
     const btn = document.getElementById('btn-login-facebook');
     const originalHtml = btn ? btn.innerHTML : '';
@@ -495,6 +525,7 @@ function setupRecaptcha() {
 }
 
 function requestOtp() {
+    if (!checkPdpaConsentState()) return;
     const input = document.getElementById('login-phone');
     const phone = input.value.trim();
     
@@ -3603,6 +3634,12 @@ function openPdpaPolicyModal() {
 }
 
 function acceptPdpaConsent() {
+    const chk = document.getElementById('chk-pdpa-consent');
+    if (chk) {
+        chk.checked = true;
+        toggleLoginButtonsState();
+    }
+
     try {
         localStorage.setItem('flixo_pdpa_consent_v1', JSON.stringify({
             accepted: true,
@@ -3620,5 +3657,5 @@ function acceptPdpaConsent() {
         }
     }
     closeModal('modal-pdpa-policy');
-    showToast('🛡️ บันทึกการยอมรับข้อตกลงและนโยบาย PDPA เรียบร้อยแล้ว', 'success');
+    showToast('🛡️ ยอมรับข้อตกลงและนโยบาย PDPA เรียบร้อยแล้ว', 'success');
 }

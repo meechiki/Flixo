@@ -132,9 +132,14 @@
                     </div>
                 </div>
 
-                <!-- PDPA Footer Notice -->
-                <div class="pdpa-login-footer text-center mt-15" style="font-size: 11px; color: var(--text-muted); line-height: 1.5; border-top: 1px dashed var(--border); padding-top: 12px;">
-                    การเข้าสู่ระบบถือว่าคุณยอมรับ <a href="javascript:void(0)" onclick="openPdpaPolicyModal()" style="color: var(--accent); text-decoration: underline; font-weight: 600;">ข้อตกลงการใช้งาน (Terms)</a> และ <a href="javascript:void(0)" onclick="openPdpaPolicyModal()" style="color: var(--accent); text-decoration: underline; font-weight: 600;">นโยบายความเป็นส่วนตัว (PDPA)</a> ของ FLIXO
+                <!-- PDPA Checkbox & Footer Notice -->
+                <div class="pdpa-login-footer mt-15" style="font-size: 12px; color: var(--text-muted); line-height: 1.5; border-top: 1px dashed var(--border); padding-top: 14px; background: rgba(56, 189, 248, 0.04); padding: 12px; border-radius: 8px; border: 1px solid var(--border);" id="pdpa-consent-box">
+                    <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; text-align: left; margin: 0;">
+                        <input type="checkbox" id="chk-pdpa-consent" onchange="toggleLoginButtonsState()" style="width: 18px; height: 18px; accent-color: var(--accent, #0284c7); margin-top: 2px; cursor: pointer; flex-shrink: 0;">
+                        <span>
+                            ข้าพเจ้ายอมรับ <a href="javascript:void(0)" onclick="openPdpaPolicyModal()" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">ข้อตกลงการใช้งาน (Terms)</a> และ <a href="javascript:void(0)" onclick="openPdpaPolicyModal()" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">นโยบายความเป็นส่วนตัว (PDPA)</a> ของ FLIXO
+                        </span>
+                    </label>
                 </div>
             </div>
         </div>
@@ -1053,6 +1058,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="app.js?v=49"></script>
+    <script src="app.js?v=50"></script>
 </body>
 </html>
