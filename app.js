@@ -3596,3 +3596,29 @@ function clearPartnerNickname() {
     closeModal('modal-rename-partner');
     showToast('🔄 คืนค่าเป็นชื่อเดิมเรียบร้อยแล้ว', 'info');
 }
+
+/* ================= PDPA PRIVACY POLICY & CONSENT ================= */
+function openPdpaPolicyModal() {
+    openModal('modal-pdpa-policy');
+}
+
+function acceptPdpaConsent() {
+    try {
+        localStorage.setItem('flixo_pdpa_consent_v1', JSON.stringify({
+            accepted: true,
+            timestamp: new Date().toISOString()
+        }));
+    } catch(e) {}
+    
+    if (state.loggedInUser) {
+        state.loggedInUser.pdpaAccepted = true;
+        if (isFirebaseEnabled && db) {
+            db.collection('users').doc(state.loggedInUser.id).update({
+                pdpaAccepted: true,
+                pdpaAcceptedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(e => console.error("Error saving PDPA:", e));
+        }
+    }
+    closeModal('modal-pdpa-policy');
+    showToast('🛡️ บันทึกการยอมรับข้อตกลงและนโยบาย PDPA เรียบร้อยแล้ว', 'success');
+}
