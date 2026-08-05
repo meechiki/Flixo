@@ -3628,6 +3628,17 @@ function clearPartnerNickname() {
     showToast('🔄 คืนค่าเป็นชื่อเดิมเรียบร้อยแล้ว', 'info');
 }
 
+/* ================= GLOBAL MODAL HELPERS ================= */
+function openModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (el) el.style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    const el = document.getElementById(modalId);
+    if (el) el.style.display = 'none';
+}
+
 /* ================= PDPA PRIVACY POLICY & CONSENT ================= */
 function openPdpaPolicyModal() {
     openModal('modal-pdpa-policy');
