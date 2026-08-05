@@ -3642,32 +3642,76 @@ function closeModal(modalId) {
 /* ================= PDPA & TERMS WIZARD LOGIC ================= */
 let currentConsentStep = 1;
 
-function handlePdpaCheckboxClick(el, evt) {
-    if (evt) evt.stopPropagation();
-    if (el.checked) {
-        // Temporarily uncheck until wizard is finished
-        el.checked = false;
-        openConsentWizard(1);
-    } else {
-        toggleLoginButtonsState();
-    }
-}
-
-function triggerPdpaCheckboxFromText(evt) {
-    if (evt) evt.stopPropagation();
-    const chk = document.getElementById('chk-pdpa-consent');
-    if (!chk) return;
-    if (!chk.checked) {
-        openConsentWizard(1);
-    } else {
-        chk.checked = false;
-        toggleLoginButtonsState();
-    }
-}
-
 function openConsentWizard(step = 1) {
-    openModal('modal-pdpa-policy');
+    console.log("Opening consent wizard step:", step);
+    const modal = document.getElementById('modal-pdpa-policy');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
     goToConsentStep(step);
+}
+
+function goToConsentStep(step) {
+    currentConsentStep = step;
+    const step1El = document.getElementById('consent-step-1');
+    const step2El = document.getElementById('consent-step-2');
+    const titleEl = document.getElementById('consent-wizard-title');
+    const badgeEl = document.getElementById('consent-step-badge');
+    const btnPrev = document.getElementById('btn-consent-prev');
+    const btnNext = document.getElementById('btn-consent-next');
+    const btnFinish = document.getElementById('btn-consent-finish');
+
+    if (step === 1) {
+        if (step1El) step1El.style.display = 'block';
+        if (step2El) step2El.style.display = 'none';
+        if (step1El) step1El.scrollTop = 0;
+        if (titleEl) titleEl.innerText = 'ขั้นตอนที่ 1/2: ข้อตกลงการใช้งาน (Terms)';
+        if (badgeEl) badgeEl.innerText = 'ขั้นตอน 1 / 2';
+        if (btnPrev) btnPrev.style.display = 'none';
+        if (btnNext) btnNext.style.display = 'inline-flex';
+        if (btnFinish) btnFinish.style.display = 'none';
+    } else {
+        if (step1El) step1El.style.display = 'none';
+        if (step2El) step2El.style.display = 'block';
+        if (step2El) step2El.scrollTop = 0;
+        if (titleEl) titleEl.innerText = 'ขั้นตอนที่ 2/2: นโยบายความเป็นส่วนตัว (PDPA)';
+        if (badgeEl) badgeEl.innerText = 'ขั้นตอน 2 / 2';
+        if (btnPrev) btnPrev.style.display = 'inline-flex';
+        if (btnNext) btnNext.style.display = 'none';
+        if (btnFinish) btnFinish.style.display = 'inline-flex';
+    }
+}
+
+function finishConsentWizard() {
+    const chk = document.getElementById('chk-pdpa-consent');
+    if (chk) {
+        chk.checked = true;
+    }
+    toggleLoginButtonsState();
+
+    try {
+        localStorage.setItem('flixo_pdpa_consent_v1', JSON.stringify({
+            accepted: true,
+            timestamp: new Date().toISOString()
+        }));
+    } catch(e) {}
+
+    if (state.loggedInUser) {
+        state.loggedInUser.pdpaAccepted = true;
+        if (isFirebaseEnabled && db) {
+            db.collection('users').doc(state.loggedInUser.id).update({
+                pdpaAccepted: true,
+                pdpaAcceptedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(e => console.error("Error saving PDPA:", e));
+        }
+    }
+
+    closeModal('modal-pdpa-policy');
+    showToast('🛡️ ยอมรับข้อตกลงและนโยบาย PDPA เรียบร้อยแล้ว สามารถเข้าสู่ระบบได้เลยครับ', 'success');
+}
+
+function cancelConsentWizard() {
+    closeModal('modal-pdpa-policy');
 }
 
 function goToConsentStep(step) {
