@@ -135,9 +135,9 @@
                 <!-- PDPA Checkbox & Footer Notice -->
                 <div class="pdpa-login-footer mt-15" style="font-size: 12px; color: var(--text-muted); line-height: 1.5; border-top: 1px dashed var(--border); padding-top: 14px; background: rgba(56, 189, 248, 0.04); padding: 12px; border-radius: 8px; border: 1px solid var(--border);" id="pdpa-consent-box">
                     <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; text-align: left; margin: 0;">
-                        <input type="checkbox" id="chk-pdpa-consent" onchange="toggleLoginButtonsState()" style="width: 18px; height: 18px; accent-color: var(--accent, #0284c7); margin-top: 2px; cursor: pointer; flex-shrink: 0;">
+                        <input type="checkbox" id="chk-pdpa-consent" onchange="handlePdpaCheckboxClick(this)" style="width: 18px; height: 18px; accent-color: var(--accent, #0284c7); margin-top: 2px; cursor: pointer; flex-shrink: 0;">
                         <span>
-                            ข้าพเจ้ายอมรับ <a href="javascript:void(0)" onclick="openPdpaPolicyModal()" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">ข้อตกลงการใช้งาน (Terms)</a> และ <a href="javascript:void(0)" onclick="openPdpaPolicyModal()" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">นโยบายความเป็นส่วนตัว (PDPA)</a> ของ FLIXO
+                            ข้าพเจ้ายอมรับ <a href="javascript:void(0)" onclick="openConsentWizard(1)" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">ข้อตกลงการใช้งาน (Terms)</a> และ <a href="javascript:void(0)" onclick="openConsentWizard(2)" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">นโยบายความเป็นส่วนตัว (PDPA)</a> ของ FLIXO
                         </span>
                     </label>
                 </div>
@@ -994,58 +994,76 @@
             <div class="modal-body" id="modal-product-detail-body">
             </div>
         </div>
-    <!-- MODAL: PDPA Privacy Policy & Terms of Service -->
+    <!-- MODAL: Multi-Step Terms & PDPA Privacy Consent Wizard -->
     <div class="modal-overlay" id="modal-pdpa-policy">
-        <div class="modal-card" style="max-width: 620px; width: 92%;">
+        <div class="modal-card" style="max-width: 650px; width: 92%;">
             <div class="modal-header" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; border-top-left-radius: 12px; border-top-right-radius: 12px; padding: 16px 20px;">
-                <h2 style="font-size: 16px; margin: 0; display: flex; align-items: center; gap: 10px; color: #fff;">
-                    <i class="fa-solid fa-user-shield" style="color: var(--accent, #38bdf8);"></i> 
-                    นโยบายความเป็นส่วนตัวและข้อตกลงการใช้งาน (PDPA)
+                <h2 style="font-size: 15px; margin: 0; display: flex; align-items: center; justify-content: space-between; color: #fff; width: 100%;">
+                    <span style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-file-contract" style="color: var(--accent, #38bdf8);"></i> 
+                        <span id="consent-wizard-title">ข้อตกลงการใช้งานและนโยบายความเป็นส่วนตัว</span>
+                    </span>
+                    <span class="badge" id="consent-step-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 11px; padding: 4px 10px; border-radius: 20px;">ขั้นตอน 1 / 2</span>
                 </h2>
-                <button class="close-btn" onclick="closeModal('modal-pdpa-policy')" style="color: white; opacity: 0.8;">&times;</button>
+                <button class="close-btn" onclick="cancelConsentWizard()" style="color: white; opacity: 0.8; margin-left: 10px;">&times;</button>
             </div>
-            <div class="modal-body" style="max-height: 65vh; overflow-y: auto; font-size: 13px; line-height: 1.7; color: var(--text-main); padding: 20px;">
+
+            <!-- STEP 1: TERMS OF SERVICE -->
+            <div class="modal-body" id="consent-step-1" style="max-height: 65vh; overflow-y: auto; font-size: 13px; line-height: 1.7; color: var(--text-main); padding: 20px;">
                 <div style="background: rgba(56, 189, 248, 0.08); border-left: 4px solid var(--accent, #0284c7); padding: 12px 15px; border-radius: 6px; margin-bottom: 16px;">
-                    <strong style="color: var(--accent, #0284c7);"><i class="fa-solid fa-lock"></i> สรุปการคุ้มครองข้อมูลส่วนบุคคล (PDPA Consent)</strong><br>
-                    แอปพลิเคชัน FLIXO ให้ความสำคัญอย่างยิ่งต่อการคุ้มครองข้อมูลส่วนบุคคลของผู้ใช้งาน ตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)
+                    <strong style="color: var(--accent, #0284c7);"><i class="fa-solid fa-shield-halved"></i> ขั้นตอนที่ 1/2: ข้อตกลงเงื่อนไขการใช้บริการ FLIXO (Terms of Service)</strong><br>
+                    โปรดอ่านและทำความเข้าใจข้อตกลงการใช้งานระบบตัวกลางซื้อขาย Escrow ก่อนเริ่มใช้งาน
+                </div>
+
+                <h4 style="font-size: 14px; margin-top: 15px; margin-bottom: 6px; color: var(--accent, #0284c7); display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-vault"></i> 1. ระบบบัญชีตัวกลางกักเก็บเงิน (Escrow Vault)
+                </h4>
+                <p style="margin-bottom: 10px;">ผู้ซื้อชำระเงินค่าสินค้าผ่านคิวอาร์โค้ดกองกลาง ยอดเงินจะถูกกักเก็บชั่วคราวในระบบอย่างปลอดภัย และจะถูกปล่อยโอนเข้าบัญชีผู้ขายเมื่อผู้ซื้อกด "ยืนยันรับสินค้า" หรือเมื่อพ้นระยะเวลา 4 วันนับจากผู้ขายแจ้งเลขพัสดุจัดส่ง</p>
+
+                <h4 style="font-size: 14px; margin-top: 15px; margin-bottom: 6px; color: var(--accent, #0284c7); display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-ban"></i> 2. ข้อห้ามการโอนเงินชวนชวนนอกระบบ (Anti-Scam Policy)
+                </h4>
+                <p style="margin-bottom: 10px;">ห้ามผู้ใช้งานชวนชวน โอนเงินตรง หรือนัดหมายซื้อขายผ่านช่องทางภายนอกแพลตฟอร์มโดยเด็ดขาด หากระบบตรวจพบคำต้องห้ามสุ่มเสี่ยง จะมีระบบแจ้งเตือนและดำเนินการล็อกห้องแชทชั่วคราวตามมาตรการความปลอดภัย</p>
+
+                <h4 style="font-size: 14px; margin-top: 15px; margin-bottom: 6px; color: var(--accent, #0284c7); display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-gavel"></i> 3. กระบวนการพิจารณาข้อพิพาท (Dispute Resolution)
+                </h4>
+                <p style="margin-bottom: 10px;">กรณีเกิดปัญหาไม่ได้รับสินค้าหรือสินค้าไม่ตรงปก ผู้ซื้อสามารถกดเปิดข้อพิพาทระงับเงิน และส่งหลักฐานให้ผู้ดูแลระบบร่วมกับ AI (Typhoon-1.5X) ตรวจสอบคำตัดสินเพื่อพิจารณาคืนเงิน หรืออนุมัติปล่อยเงินแก่ผู้ขาย</p>
+            </div>
+
+            <!-- STEP 2: PRIVACY POLICY (PDPA) -->
+            <div class="modal-body" id="consent-step-2" style="display: none; max-height: 65vh; overflow-y: auto; font-size: 13px; line-height: 1.7; color: var(--text-main); padding: 20px;">
+                <div style="background: rgba(34, 197, 94, 0.08); border-left: 4px solid #22c55e; padding: 12px 15px; border-radius: 6px; margin-bottom: 16px;">
+                    <strong style="color: #15803d;"><i class="fa-solid fa-user-shield"></i> ขั้นตอนที่ 2/2: นโยบายความเป็นส่วนตัว (PDPA Privacy Policy)</strong><br>
+                    การคุ้มครองข้อมูลส่วนบุคคลตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562
                 </div>
 
                 <h4 style="font-size: 14px; margin-top: 15px; margin-bottom: 6px; color: var(--accent, #0284c7); display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-database"></i> 1. ข้อมูลส่วนบุคคลที่เราจัดเก็บ
                 </h4>
                 <ul style="padding-left: 20px; margin-bottom: 14px;">
-                    <li style="margin-bottom: 6px;"><strong>ข้อมูลการยืนยันตัวตน (e-KYC):</strong> ภาพถ่ายใบหน้า และภาพถ่ายคู่กับบัตรประชาชน เพื่อพิสูจน์ตัวตนของผู้ขายและคู่สัญญา</li>
-                    <li style="margin-bottom: 6px;"><strong>ข้อมูลติดต่อ:</strong> ชื่อ-นามสกุล, เบอร์โทรศัพท์, อีเมล และบัญชีผู้ใช้งาน Google / Facebook</li>
-                    <li style="margin-bottom: 6px;"><strong>ข้อมูลทางการเงิน:</strong> ชื่อบัญชีธนาคาร, เลขที่บัญชีธนาคาร และประวัติธุรกรรมการกักเก็บเงิน (Escrow Vault)</li>
-                    <li style="margin-bottom: 6px;"><strong>ข้อมูลประวัติการทำรายการ:</strong> ข้อความสนทนา, รูปภาพสินค้า และเอกสารหลักฐานข้อพิพาท</li>
+                    <li style="margin-bottom: 6px;"><strong>ข้อมูลการยืนยันตัวตน (e-KYC):</strong> ภาพถ่ายใบหน้า และภาพถ่ายคู่กับบัตรประชาชน เพื่อยืนยันตัวตนก่อนเปิดการขาย</li>
+                    <li style="margin-bottom: 6px;"><strong>ข้อมูลติดต่อและบัญชี:</strong> เบอร์โทรศัพท์, อีเมล และโปรไฟล์ Google / Facebook</li>
+                    <li style="margin-bottom: 6px;"><strong>ข้อมูลทางการเงิน:</strong> ชื่อบัญชีและเลขที่บัญชีธนาคารสำหรับรับเงินโอน</li>
                 </ul>
 
                 <h4 style="font-size: 14px; margin-top: 15px; margin-bottom: 6px; color: var(--accent, #0284c7); display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-bullseye"></i> 2. วัตถุประสงค์ในการจัดเก็บและใช้งานข้อมูล
+                    <i class="fa-solid fa-lock"></i> 2. การเข้ารหัสและรักษาความปลอดภัย
                 </h4>
-                <ul style="padding-left: 20px; margin-bottom: 14px;">
-                    <li style="margin-bottom: 6px;">เพื่อยืนยันตัวตน ป้องกันการแอบอ้างและการทุจริตบัญชีม้าในการซื้อขายออนไลน์</li>
-                    <li style="margin-bottom: 6px;">เพื่อดำเนินกระบวนการกักเก็บเงิน (Escrow Vault) และสั่งโอนเงินเข้าบัญชีเมื่อธุรกรรมเสร็จสมบูรณ์</li>
-                    <li style="margin-bottom: 6px;">เพื่อใช้เป็นหลักฐานและข้อมูลสนับสนุนสำหรับ AI (Typhoon-1.5X) และผู้ดูแลระบบในการพิจารณาตัดสินข้อพิพาท</li>
-                </ul>
-
-                <h4 style="font-size: 14px; margin-top: 15px; margin-bottom: 6px; color: var(--accent, #0284c7); display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-user-lock"></i> 3. การรักษาความปลอดภัยและการจำกัดสิทธิ์เข้าถึง
-                </h4>
-                <ul style="padding-left: 20px; margin-bottom: 14px;">
-                    <li style="margin-bottom: 6px;">ข้อมูลบัตรประชาชนและข้อมูลทางการเงิน ได้รับการเข้ารหัสความปลอดภัย (SSL/TLS Encryption)</li>
-                    <li style="margin-bottom: 6px;">สิทธิ์การเข้าถึงภาพถ่าย e-KYC ถูกจำกัดเฉพาะผู้ดูแลระบบ (Admin) ที่ได้รับอนุญาตเท่านั้น</li>
-                    <li style="margin-bottom: 6px;">ไม่เปิดเผย ขาย หรือส่งต่อข้อมูลส่วนบุคคลให้แก่บุคคลภายนอกโดยเด็ดขาด</li>
-                </ul>
-
-                <h4 style="font-size: 14px; margin-top: 15px; margin-bottom: 6px; color: var(--accent, #0284c7); display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-scale-balanced"></i> 4. สิทธิ์ของเจ้าของข้อมูลส่วนบุคคล
-                </h4>
-                <p style="margin-bottom: 10px;">ท่านมีสิทธิ์ในการเข้าถึง ขอปรับปรุงแก้ไข หรือร้องขอให้ระงับ/ลบข้อมูลส่วนบุคคลของท่านเมื่อยกเลิกการใช้งานบัญชี ตามหลักเกณฑ์ที่กฎหมายคุ้มครองข้อมูลส่วนบุคคลกำหนด</p>
+                <p style="margin-bottom: 10px;">ข้อมูลทั้งหมดได้รับการเข้ารหัสความปลอดภัย (SSL/TLS) สิทธิ์การตรวจดูภาพถ่าย e-KYC ถูกจำกัดเฉพาะผู้ดูแลระบบ (Admin) ที่ได้รับอนุญาตเท่านั้น โดยไม่มีการเปิดเผยหรือขายข้อมูลแก่บุคคลภายนอก</p>
             </div>
-            <div class="modal-footer text-right" style="border-top: 1px solid var(--border); padding: 14px 20px; background: var(--surface-2, #f8fafc);">
-                <button class="btn-primary" onclick="acceptPdpaConsent()" style="padding: 10px 24px; font-weight: 600;">
-                    <i class="fa-solid fa-check"></i> ข้าพเจ้ายินยอมและรับทราบข้อตกลง
+
+            <!-- WIZARD FOOTER CONTROLS -->
+            <div class="modal-footer" style="border-top: 1px solid var(--border); padding: 14px 20px; background: var(--surface-2, #f8fafc); display: flex; align-items: center; justify-content: space-between;">
+                <button class="btn-secondary" id="btn-consent-prev" onclick="goToConsentStep(1)" style="display: none;">
+                    <i class="fa-solid fa-arrow-left"></i> ย้อนกลับ
+                </button>
+                <div style="flex-grow: 1;"></div>
+                <button class="btn-primary" id="btn-consent-next" onclick="goToConsentStep(2)" style="padding: 10px 22px; font-weight: 600;">
+                    ถัดไป: อ่านนโยบาย PDPA <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <button class="btn-success" id="btn-consent-finish" onclick="finishConsentWizard()" style="display: none; padding: 10px 24px; font-weight: 600; background: #22c55e; border: none; color: white;">
+                    <i class="fa-solid fa-check"></i> ยอมรับและเสร็จสิ้น
                 </button>
             </div>
         </div>
@@ -1058,6 +1076,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="app.js?v=51"></script>
+    <script src="app.js?v=52"></script>
 </body>
 </html>
