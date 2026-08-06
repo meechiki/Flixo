@@ -133,13 +133,13 @@
                 </div>
 
                 <!-- PDPA Checkbox & Footer Notice -->
-                <div class="pdpa-login-footer mt-15" style="font-size: 12px; color: var(--text-muted); line-height: 1.5; border-top: 1px dashed var(--border); padding-top: 14px; background: rgba(56, 189, 248, 0.04); padding: 12px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer;" id="pdpa-consent-box" onclick="openConsentWizard(1)">
-                    <div style="display: flex; align-items: flex-start; gap: 10px; text-align: left; margin: 0;">
-                        <input type="checkbox" id="chk-pdpa-consent" style="width: 20px; height: 20px; accent-color: var(--accent, #0284c7); margin-top: 2px; cursor: pointer; flex-shrink: 0; pointer-events: none;">
-                        <span>
-                            ข้าพเจ้ายอมรับ <a href="javascript:void(0)" onclick="event.stopPropagation(); openConsentWizard(1);" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">ข้อตกลงการใช้งาน (Terms)</a> และ <a href="javascript:void(0)" onclick="event.stopPropagation(); openConsentWizard(2);" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">นโยบายความเป็นส่วนตัว (PDPA)</a> ของ FLIXO
+                <div class="pdpa-login-footer mt-15" style="font-size: 12px; color: var(--text-muted); line-height: 1.5; border-top: 1px dashed var(--border); padding-top: 14px; background: rgba(56, 189, 248, 0.04); padding: 12px; border-radius: 8px; border: 1px solid var(--border);" id="pdpa-consent-box">
+                    <label style="display: flex; align-items: flex-start; gap: 10px; text-align: left; margin: 0; cursor: pointer;">
+                        <input type="checkbox" id="chk-pdpa-consent" onchange="toggleLoginButtonsState()" style="width: 20px; height: 20px; accent-color: var(--accent, #0284c7); margin-top: 2px; cursor: pointer; flex-shrink: 0;">
+                        <span style="user-select: none;">
+                            ข้าพเจ้ายอมรับ <a href="#" onclick="openConsentWizard(1); return false;" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">ข้อตกลงการใช้งาน (Terms)</a> และ <a href="#" onclick="openConsentWizard(2); return false;" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">นโยบายความเป็นส่วนตัว (PDPA)</a> ของ FLIXO
                         </span>
-                    </div>
+                    </label>
                 </div>
             </div>
         </div>
@@ -1076,6 +1076,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="app.js?v=54"></script>
+    <script src="app.js?v=55"></script>
 </body>
 </html>
