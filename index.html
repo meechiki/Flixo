@@ -137,7 +137,7 @@
                     <label style="display: flex; align-items: flex-start; gap: 10px; text-align: left; margin: 0; cursor: pointer;">
                         <input type="checkbox" id="chk-pdpa-consent" onchange="toggleLoginButtonsState()" style="width: 20px; height: 20px; accent-color: var(--accent, #0284c7); margin-top: 2px; cursor: pointer; flex-shrink: 0;">
                         <span style="user-select: none;">
-                            ข้าพเจ้ายอมรับ <a href="#" onclick="openConsentWizard(1); return false;" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">ข้อตกลงการใช้งาน (Terms)</a> และ <a href="#" onclick="openConsentWizard(2); return false;" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">นโยบายความเป็นส่วนตัว (PDPA)</a> ของ FLIXO
+                            ข้าพเจ้ายอมรับ <a href="javascript:openConsentWizard(1);" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">ข้อตกลงการใช้งาน (Terms)</a> และ <a href="javascript:openConsentWizard(2);" style="color: var(--accent, #0284c7); text-decoration: underline; font-weight: 600;">นโยบายความเป็นส่วนตัว (PDPA)</a> ของ FLIXO
                         </span>
                     </label>
                 </div>
@@ -1076,6 +1076,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="app.js?v=55"></script>
+    <script src="app.js?v=56"></script>
 </body>
 </html>
