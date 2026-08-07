@@ -747,56 +747,48 @@ function initRealtimeListeners() {
                 roomsList.push(data);
             });
             state.rooms = roomsList;
-            if (state.activeRoomId) {
-                const active = state.rooms.find(r => r.id === state.activeRoomId);
-                if (active) renderDealChatWindow(active.id);
+            
+            // Auto-select room if none is currently selected and rooms exist
+            if (!state.activeRoomId && roomsList.length > 0) {
+                state.activeRoomId = roomsList[0].id;
             }
-            renderActiveDealsListUI();
-        }, err => console.warn("Rooms listener error:", err));
+            
+            // Re-render sidebar, active chat details & admin panel
+            renderDealsSidebar();
+            renderDealChatWindow();
+            if (isAdmin) renderAdminPanel();
+        }, err => {
+            console.error("Rooms listener error:", err);
+        });
+            
+        // 2. Listen to Admin KYC Requests Queue
+        activeUnsubscribers.kyc = db.collection('kycQueue')
+            .onSnapshot(snapshot => {
+                let queue = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    queue.push(data);
+                });
+                state.kycQueue = queue;
+                renderAdminPanel();
+            });
+
+        // 3. Listen to Admin Dispute Tickets List
+        activeUnsubscribers.disputes = db.collection('disputes')
+            .onSnapshot(snapshot => {
+                let list = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    list.push(data);
+                });
+                state.disputes = list;
+                renderAdminPanel();
+            });
     } catch(e) {
         console.warn("initRealtimeListeners error caught safely:", e);
     }
-}
-        state.rooms = roomsList;
-        
-        // Auto-select room if none is currently selected and rooms exist
-        if (!state.activeRoomId && roomsList.length > 0) {
-            state.activeRoomId = roomsList[0].id;
-        }
-        
-        // Re-render sidebar, active chat details & admin panel
-        renderDealsSidebar();
-        renderDealChatWindow();
-        if (isAdmin) renderAdminPanel();
-    }, err => {
-        console.error("Rooms listener error:", err);
-    });
-        
-    // 2. Listen to Admin KYC Requests Queue
-    activeUnsubscribers.kyc = db.collection('kycQueue')
-        .onSnapshot(snapshot => {
-            let queue = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                data.id = doc.id;
-                queue.push(data);
-            });
-            state.kycQueue = queue;
-            renderAdminPanel();
-        });
-
-    // 3. Listen to Admin Dispute Tickets List
-    activeUnsubscribers.disputes = db.collection('disputes')
-        .onSnapshot(snapshot => {
-            let list = [];
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                data.id = doc.id;
-                list.push(data);
-            });
-            state.disputes = list;
-            renderAdminPanel();
-        });
 }
 
 function unsubscribeAllListeners() {
