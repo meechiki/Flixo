@@ -312,7 +312,7 @@ function toggleLoginButtonsState() {
 
 function loginWithGoogle() {
     if (!checkPdpaConsentState()) return;
-    console.log("Button clicked, isFirebaseEnabled:", isFirebaseEnabled, "auth:", !!auth);
+    console.log("Initiating Google Login via Firebase...");
     
     const btn = document.getElementById('btn-login-google');
     const originalHtml = btn ? btn.innerHTML : '';
@@ -332,20 +332,18 @@ function loginWithGoogle() {
             })
             .catch((err) => {
                 if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-                console.warn("Google Sign-in popup notice:", err);
-                
-                let notifyMsg = 'กำลังดำเนินการเข้าสู่ระบบ...';
-                if (err.code === 'auth/popup-blocked') notifyMsg = '⚠️ เบราว์เซอร์บล็อก Pop-up กรุณาอนุญาต Pop-up';
-                else if (err.code === 'auth/unauthorized-domain') notifyMsg = '⚠️ โดเมนยังไม่ได้รับอนุญาตใน Firebase Console';
-                
-                showToast(notifyMsg, 'info');
-                handleUserSessionInit('user_google@flixo.app', 'Google User', 'https://api.dicebear.com/7.x/bottts/svg?seed=google_user');
+                console.error("Google Sign-in error:", err);
+                if (err.code === 'auth/popup-blocked') {
+                    showToast('⚠️ เบราว์เซอร์ของคุณบล็อกหน้าต่าง Pop-up กรุณาอนุญาต Pop-up', 'error');
+                } else if (err.code === 'auth/unauthorized-domain') {
+                    showToast('⚠️ โดเมนนี้ยังไม่ได้ลงทะเบียนใน Firebase Console', 'error');
+                } else {
+                    showToast('⚠️ เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Google', 'error');
+                }
             });
     } else {
-        setTimeout(() => {
-            if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-            handleUserSessionInit('user_google@flixo.app', 'Google User', 'https://api.dicebear.com/7.x/bottts/svg?seed=google_user');
-        }, 400);
+        if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
+        showToast('⚠️ ระบบเชื่อมต่อ Firebase Auth ยังไม่พร้อมใช้งาน', 'error');
     }
 }
 
@@ -381,7 +379,7 @@ function statusChangeCallback(response) {
 
 function loginWithFacebook() {
     if (!checkPdpaConsentState()) return;
-    console.log("Real Facebook Login triggered via Firebase OAuth Provider...");
+    console.log("Initiating Facebook Login via Firebase...");
     const btn = document.getElementById('btn-login-facebook');
     const originalHtml = btn ? btn.innerHTML : '';
     if (btn) {
@@ -399,7 +397,7 @@ function loginWithFacebook() {
                 if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
                 const user = result.user;
                 const userEmail = user.email || (user.providerData && user.providerData[0] && user.providerData[0].email) || user.uid + '@facebook.com';
-                const userName = user.displayName || 'Facebook Member';
+                const userName = user.displayName || 'Facebook User';
                 const userAvatar = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.uid}`;
                 
                 showToast(`🔵 เข้าสู่ระบบผ่าน Facebook สำเร็จ! ยินดีต้อนรับคุณ ${userName}`, 'success');
@@ -407,19 +405,16 @@ function loginWithFacebook() {
             })
             .catch((err) => {
                 if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-                console.warn("Facebook Login notice:", err);
-                
-                let notifyMsg = 'กำลังดำเนินการเข้าสู่ระบบ Facebook...';
-                if (err.code === 'auth/popup-blocked') notifyMsg = '⚠️ เบราว์เซอร์บล็อก Pop-up กรุณาอนุญาต Pop-up';
-                
-                showToast(notifyMsg, 'info');
-                handleUserSessionInit('user_facebook@flixo.app', 'Facebook User', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook_user');
+                console.error("Facebook Login error:", err);
+                if (err.code === 'auth/popup-blocked') {
+                    showToast('⚠️ เบราว์เซอร์ของคุณบล็อกหน้าต่าง Pop-up กรุณาอนุญาต Pop-up', 'error');
+                } else {
+                    showToast('⚠️ เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Facebook', 'error');
+                }
             });
     } else {
-        setTimeout(() => {
-            if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-            handleUserSessionInit('user_facebook@flixo.app', 'Facebook User', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook_user');
-        }, 400);
+        if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
+        showToast('⚠️ ระบบเชื่อมต่อ Firebase Auth ยังไม่พร้อมใช้งาน', 'error');
     }
 }
 
