@@ -465,12 +465,8 @@ function handleUserSessionInit(identifier, displayName, photoURL) {
                 }
             })
             .catch(err => {
-                console.error("Firestore error:", err);
-                let msg = err.message;
-                if (msg.includes('Missing or insufficient permissions')) {
-                    msg = 'ไม่มีสิทธิ์เข้าถึงฐานข้อมูล (Permission Denied) - โปรดตั้งค่า Firestore Security Rules เป็น allow read, write: if true;';
-                }
-                alert("เกิดข้อผิดพลาดจาก Firebase Firestore:\n" + msg);
+                console.warn("Firestore error/timeout, falling back to local login seamlessly:", err);
+                fallbackLocalLogin(cleanId, displayName, photoURL);
             });
     } else {
         fallbackLocalLogin(cleanId, displayName, photoURL);
@@ -733,21 +729,32 @@ function formatPhoneNumber(num) {
 
 function initRealtimeListeners() {
     if (!isFirebaseEnabled || !state.loggedInUser) return;
-    
-    const isAdmin = state.loggedInUser.phone === '0830158022' || state.loggedInUser.phone === '0831058022' || state.loggedInUser.id === '000-001';
-    
-    // 1. Listen to Deals (All rooms for admin, or user-specific rooms for regular members)
-    let roomsRef = db.collection('rooms');
-    let roomsQuery = isAdmin ? roomsRef : roomsRef.where('ids', 'array-contains', state.loggedInUser.id);
-    
-    activeUnsubscribers.rooms = roomsQuery.onSnapshot(snapshot => {
-        let roomsList = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            data.id = doc.id;
-            data.activeRole = (data.buyerId === state.loggedInUser.id) ? 'buyer' : 'seller';
-            roomsList.push(data);
-        });
+    try {
+        const isAdmin = state.loggedInUser.phone === '0830158022' || state.loggedInUser.phone === '0831058022' || state.loggedInUser.id === '000-001';
+        
+        // 1. Listen to Deals (All rooms for admin, or user-specific rooms for regular members)
+        let roomsRef = db.collection('rooms');
+        let roomsQuery = isAdmin ? roomsRef : roomsRef.where('ids', 'array-contains', state.loggedInUser.id);
+        
+        activeUnsubscribers.rooms = roomsQuery.onSnapshot(snapshot => {
+            let roomsList = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                data.id = doc.id;
+                data.activeRole = (data.buyerId === state.loggedInUser.id) ? 'buyer' : 'seller';
+                roomsList.push(data);
+            });
+            state.rooms = roomsList;
+            if (state.activeRoomId) {
+                const active = state.rooms.find(r => r.id === state.activeRoomId);
+                if (active) renderDealChatWindow(active.id);
+            }
+            renderActiveDealsListUI();
+        }, err => console.warn("Rooms listener error:", err));
+    } catch(e) {
+        console.warn("initRealtimeListeners error caught safely:", e);
+    }
+}
         state.rooms = roomsList;
         
         // Auto-select room if none is currently selected and rooms exist
