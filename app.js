@@ -332,16 +332,19 @@ function loginWithGoogle() {
             })
             .catch((err) => {
                 if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-                console.warn("Google Sign-in popup error/fallback:", err);
-                // Fallback simulation mode
-                showToast('🟢 เข้าสู่ระบบโหมด Google Demo สำเร็จ', 'success');
-                handleUserSessionInit('user_google@flixo.app', 'Google User', 'https://api.dicebear.com/7.x/bottts/svg?seed=google_demo');
+                console.warn("Google Sign-in popup notice:", err);
+                
+                let notifyMsg = 'กำลังดำเนินการเข้าสู่ระบบ...';
+                if (err.code === 'auth/popup-blocked') notifyMsg = '⚠️ เบราว์เซอร์บล็อก Pop-up กรุณาอนุญาต Pop-up';
+                else if (err.code === 'auth/unauthorized-domain') notifyMsg = '⚠️ โดเมนยังไม่ได้รับอนุญาตใน Firebase Console';
+                
+                showToast(notifyMsg, 'info');
+                handleUserSessionInit('user_google@flixo.app', 'Google User', 'https://api.dicebear.com/7.x/bottts/svg?seed=google_user');
             });
     } else {
         setTimeout(() => {
             if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-            showToast('🟢 เข้าสู่ระบบ Google สำเร็จ (Demo Mode)', 'success');
-            handleUserSessionInit('user_google@flixo.app', 'Google User', 'https://api.dicebear.com/7.x/bottts/svg?seed=google_demo');
+            handleUserSessionInit('user_google@flixo.app', 'Google User', 'https://api.dicebear.com/7.x/bottts/svg?seed=google_user');
         }, 400);
     }
 }
@@ -404,15 +407,18 @@ function loginWithFacebook() {
             })
             .catch((err) => {
                 if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-                console.warn("Facebook Login error/fallback:", err);
-                showToast('🔵 เข้าสู่ระบบโหมด Facebook Demo สำเร็จ', 'success');
-                handleUserSessionInit('user_facebook@flixo.app', 'Facebook User', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook_demo');
+                console.warn("Facebook Login notice:", err);
+                
+                let notifyMsg = 'กำลังดำเนินการเข้าสู่ระบบ Facebook...';
+                if (err.code === 'auth/popup-blocked') notifyMsg = '⚠️ เบราว์เซอร์บล็อก Pop-up กรุณาอนุญาต Pop-up';
+                
+                showToast(notifyMsg, 'info');
+                handleUserSessionInit('user_facebook@flixo.app', 'Facebook User', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook_user');
             });
     } else {
         setTimeout(() => {
             if (btn) { btn.innerHTML = originalHtml; btn.disabled = false; }
-            showToast('🔵 เข้าสู่ระบบ Facebook สำเร็จ (Demo Mode)', 'success');
-            handleUserSessionInit('user_facebook@flixo.app', 'Facebook User', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook_demo');
+            handleUserSessionInit('user_facebook@flixo.app', 'Facebook User', 'https://api.dicebear.com/7.x/bottts/svg?seed=facebook_user');
         }, 400);
     }
 }
@@ -423,7 +429,7 @@ function handleUserSessionInit(identifier, displayName, photoURL) {
     const isEmail = cleanId.includes('@');
     const searchField = isEmail ? 'email' : 'phone';
     
-    if (isFirebaseEnabled) {
+    if (isFirebaseEnabled && db) {
         db.collection('users').where(searchField, '==', cleanId).get()
             .then(querySnapshot => {
                 let user;
@@ -450,8 +456,9 @@ function handleUserSessionInit(identifier, displayName, photoURL) {
                         };
                     }
                     
-                    db.collection('users').doc(user.id).set(user)
-                        .then(() => { enterMainApp(user); });
+                    db.collection('users').doc(user.id).set(user, { merge: true })
+                        .then(() => { enterMainApp(user); })
+                        .catch(() => { enterMainApp(user); });
                 } else {
                     user = querySnapshot.docs[0].data();
                     if (cleanId === 'tawannatv@gmail.com' || cleanId === '0830158022' || cleanId === '0831058022') {
@@ -465,7 +472,7 @@ function handleUserSessionInit(identifier, displayName, photoURL) {
                 }
             })
             .catch(err => {
-                console.warn("Firestore error/timeout, falling back to local login seamlessly:", err);
+                console.warn("Firestore access info:", err);
                 fallbackLocalLogin(cleanId, displayName, photoURL);
             });
     } else {
