@@ -3716,32 +3716,3 @@ function finishConsentWizard() {
 function cancelConsentWizard() {
     closeModal('modal-pdpa-policy');
 }
-
-    try {
-        localStorage.setItem('flixo_pdpa_consent_v1', JSON.stringify({
-            accepted: true,
-            timestamp: new Date().toISOString()
-        }));
-    } catch(e) {}
-
-    if (state.loggedInUser) {
-        state.loggedInUser.pdpaAccepted = true;
-        if (isFirebaseEnabled && db) {
-            db.collection('users').doc(state.loggedInUser.id).update({
-                pdpaAccepted: true,
-                pdpaAcceptedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(e => console.error("Error saving PDPA:", e));
-        }
-    }
-
-    closeModal('modal-pdpa-policy');
-    showToast('🛡️ ยอมรับข้อตกลงและนโยบาย PDPA เรียบร้อยแล้ว สามารถเข้าสู่ระบบได้เลยครับ', 'success');
-}
-
-function cancelConsentWizard() {
-    const chk = document.getElementById('chk-pdpa-consent');
-    if (chk && !chk.checked) {
-        toggleLoginButtonsState();
-    }
-    closeModal('modal-pdpa-policy');
-}
